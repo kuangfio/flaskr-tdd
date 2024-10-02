@@ -1,4 +1,3 @@
-import os
 import json
 import pytest
 from pathlib import Path
@@ -6,6 +5,7 @@ from project import models
 from project.app import app, db
 
 TEST_DB = "test.db"
+
 
 @pytest.fixture
 def client():
@@ -19,6 +19,7 @@ def client():
         yield app.test_client()  # tests run here
         db.drop_all()  # teardown
 
+
 def login(client, username, password):
     """Login helper function"""
     return client.post(
@@ -27,23 +28,28 @@ def login(client, username, password):
         follow_redirects=True,
     )
 
+
 def logout(client):
     """Logout helper function"""
     return client.get("/logout", follow_redirects=True)
 
+
 def test_index(client):
     response = client.get("/", content_type="html/text")
     assert response.status_code == 200
+
 
 def test_database(client):
     """initial test. ensure that the database exists"""
     tester = Path("test.db").is_file()
     assert tester
 
+
 def test_empty_db(client):
     """Ensure database is blank"""
     rv = client.get("/")
     assert b"No entries yet. Add some!" in rv.data
+
 
 def test_login_logout(client):
     """Test login and logout using helper functions"""
@@ -55,6 +61,7 @@ def test_login_logout(client):
     assert b"Invalid username" in rv.data
     rv = login(client, app.config["USERNAME"], app.config["PASSWORD"] + "x")
     assert b"Invalid password" in rv.data
+
 
 def test_messages(client):
     """Ensure that user can post messages"""
@@ -68,6 +75,7 @@ def test_messages(client):
     assert b"&lt;Hello&gt;" in rv.data
     assert b"<strong>HTML</strong> allowed here" in rv.data
 
+
 def test_delete_message(client):
     """Ensure the messages are being deleted"""
     rv = client.get("/delete/1")
@@ -78,20 +86,17 @@ def test_delete_message(client):
     data = json.loads(rv.data)
     assert data["status"] == 1
 
+
 def test_search(client):
-    """test search function"""
-    #create a message
-    rv = client.post(
-        "/add",
-        data=dict(title="<Hello>", text="<strong>HTML</strong> allowed here"),
-        follow_redirects=True,
-    )
+    """test search function by adding to db and searching"""
     new_entry = models.Post("Hello", "test")
     db.session.add(new_entry)
     db.session.commit()
-    rv = client.get('/search/?query=hello', follow_redirects=True)
+    rv = client.get("/search/?query=hello", follow_redirects=True)
     assert "Hello" in rv.text
-    
+
+
+# non-functional test
 # def test_logged_in(client):
 #     from functools import wraps
 #     def login_required(f):
@@ -106,8 +111,6 @@ def test_search(client):
 #         return 1
 #     #ask ta about how to test this when it's not associated with anything
 #     assert login_required(foo) != 0
-
-
 
 # import json
 # from pathlib import Path
