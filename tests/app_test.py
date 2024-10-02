@@ -2,7 +2,7 @@ import os
 import json
 import pytest
 from pathlib import Path
-
+from project import models
 from project.app import app, db
 
 TEST_DB = "test.db"
@@ -70,7 +70,11 @@ def test_messages(client):
 
 def test_delete_message(client):
     """Ensure the messages are being deleted"""
-    rv = client.get('/delete/1')
+    rv = client.get("/delete/1")
+    data = json.loads(rv.data)
+    assert data["status"] == 0
+    login(client, app.config["USERNAME"], app.config["PASSWORD"])
+    rv = client.get("/delete/1")
     data = json.loads(rv.data)
     assert data["status"] == 1
 
@@ -82,9 +86,28 @@ def test_search(client):
         data=dict(title="<Hello>", text="<strong>HTML</strong> allowed here"),
         follow_redirects=True,
     )
-    rv = client.get('/search/?query=hello')
-    assert b"Search:" in rv.data
+    new_entry = models.Post("Hello", "test")
+    db.session.add(new_entry)
+    db.session.commit()
+    rv = client.get('/search/?query=hello', follow_redirects=True)
+    assert "Hello" in rv.text
     
+# def test_logged_in(client):
+#     from functools import wraps
+#     def login_required(f):
+#         @wraps(f)
+#         def decorated_function(*args, **kwargs):
+#             if not db.session.get('logged_in'):
+#                 #flash('Please log in.')
+#                 return 0
+#             return f(*args, **kwargs)
+#         return decorated_function
+#     def foo():
+#         return 1
+#     #ask ta about how to test this when it's not associated with anything
+#     assert login_required(foo) != 0
+
+
 
 # import json
 # from pathlib import Path
