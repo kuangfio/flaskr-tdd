@@ -116,7 +116,7 @@ def test_login_required(client):
 
         @login_required
         def dummy_function():
-            return ("worked without logging in", 400)
+            return ("worked without logging in", 200)
 
         rv = dummy_function()
         assert rv[1] == 401
