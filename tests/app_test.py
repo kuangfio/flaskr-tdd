@@ -100,17 +100,26 @@ def test_search(client):
 # login required
 def test_logged_in(client):
     with app.test_request_context():
-        with app.test_client() as testing_client:
-            with client.session_transaction() as session:
 
-                @login_required
-                def search_without_logging_in(client):
-                    rv = client.get("/search/query=1")
-                    data = json.loads(rv.data)
-                    return data
+        @login_required
+        def search_without_logging_in(client):
+            rv = client.get("/search/query=1")
+            data = json.loads(rv.data)
+            return data
 
-                data = search_without_logging_in(client)
-                assert data[1] == 401
+        data = search_without_logging_in(client)
+        assert data[1] == 401
+
+
+def test_login_required(client):
+    with app.test_request_context():
+
+        @login_required
+        def dummy_function():
+            return ("worked without logging in", 400)
+
+        rv = dummy_function()
+        assert rv[1] == 401
 
 
 # import json
