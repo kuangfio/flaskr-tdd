@@ -2,7 +2,7 @@ import json
 import pytest
 from pathlib import Path
 from project import models
-from project.app import app, db
+from project.app import app, db, login_required
 
 TEST_DB = "test.db"
 
@@ -97,21 +97,21 @@ def test_search(client):
     assert "Hello" in rv.text
 
 
-# non-functional test
-# def test_logged_in(client):
-#     from functools import wraps
-#     def login_required(f):
-#         @wraps(f)
-#         def decorated_function(*args, **kwargs):
-#             if not db.session.get('logged_in'):
-#                 #flash('Please log in.')
-#                 return 0
-#             return f(*args, **kwargs)
-#         return decorated_function
-#     def foo():
-#         return 1
-#     #ask ta about how to test this when it's not associated with anything
-#     assert login_required(foo) != 0
+# login required
+def test_logged_in(client):
+    with app.test_request_context():
+        with app.test_client() as testing_client:
+            with client.session_transaction() as session:
+
+                @login_required
+                def search_without_logging_in(client):
+                    rv = client.get("/search/query=1")
+                    data = json.loads(rv.data)
+                    return data
+
+                data = search_without_logging_in(client)
+                assert data[1] == 401
+
 
 # import json
 # from pathlib import Path
